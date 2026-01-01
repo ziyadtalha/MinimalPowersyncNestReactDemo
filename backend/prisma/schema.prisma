@@ -17,6 +17,7 @@ model User {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+  products  Product[]
 }
 
 model Product {
@@ -25,4 +26,6 @@ model Product {
   price       Float
   description String?
   createdAt   DateTime @default(now())
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
 }

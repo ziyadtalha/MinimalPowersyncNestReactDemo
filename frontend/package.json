@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@journeyapps/wa-sqlite": "^1.4.1",
+    "@powersync/react": "^1.8.2",
+    "@powersync/web": "^1.30.0",
     "axios": "^1.13.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

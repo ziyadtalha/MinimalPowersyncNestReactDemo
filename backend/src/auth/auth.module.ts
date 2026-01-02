@@ -13,11 +13,14 @@ import { APP_GUARD } from '@nestjs/core';
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         secret:
           configService.get<string>('JWT_SECRET') ||
           'your-secret-key-change-in-production',
-        signOptions: { expiresIn: '7d' },
+        signOptions: {
+          expiresIn: (configService.get<string>('JWT_EXPIRES_IN') || '1d') as any,
+          audience: 'powersync', // Required for PowerSync JWT validation
+        },
       }),
       inject: [ConfigService],
     }),

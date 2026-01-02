@@ -1,0 +1,47 @@
+replication:
+  connections:
+    - type: postgresql
+      uri: postgresql://powersync_user:powersync123@host.docker.internal:5432/minimaldemo
+
+      # SSL settings
+      sslmode: disable # 'verify-full' (default) or 'verify-ca' or 'disable'
+
+# Connection settings for sync bucket storage
+storage:
+  type: mongodb
+  uri: mongodb://mongo:27017/powersync_demo
+
+# The port which the PowerSync API server will listen on
+port: 8080
+
+# Specify sync rules
+sync_rules:
+  content: |
+    bucket_definitions:
+      user_products:
+        parameters: SELECT id as user_id FROM "User"
+        data:
+          - SELECT * FROM "Product" WHERE "ownerId" = bucket.user_id
+
+# Settings for client authentication
+client_auth:
+  # Enable this if using Supabase Auth
+  supabase: false
+  
+  # Symmetric key for HS256 JWT validation (HMAC with SHA-256)
+  # Match the JWT_SECRET from your backend .env file
+  # "supersecret" encoded as base64url = c3VwZXJzZWNyZXQ
+  jwks:
+    keys:
+      - kty: oct
+        alg: HS256
+        k: c3VwZXJzZWNyZXQ
+  
+  # Audience must match JWT 'aud' claim from backend
+  audience: ['powersync']
+
+  # Settings for telemetry reporting
+  # See https://docs.powersync.com/self-hosting/telemetry
+  telemetry:
+    # Opt out of reporting anonymized usage metrics to PowerSync telemetry service
+    disable_telemetry_sharing: false

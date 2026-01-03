@@ -19,7 +19,8 @@ sync_rules:
   content: |
     bucket_definitions:
       user_products:
-        parameters: SELECT id as user_id FROM "User"
+        # Only create bucket for the authenticated user
+        parameters: SELECT token_parameters.user_id
         data:
           - SELECT * FROM "Product" WHERE "ownerId" = bucket.user_id
 
@@ -39,9 +40,12 @@ client_auth:
   
   # Audience must match JWT 'aud' claim from backend
   audience: ['powersync']
+  
+  # Map JWT 'sub' claim to 'user_id' for PowerSync
+  # PowerSync will use this to filter sync buckets per user
+  jwt_claims:
+    user_id: sub
 
-  # Settings for telemetry reporting
-  # See https://docs.powersync.com/self-hosting/telemetry
-  telemetry:
+telemetry:
     # Opt out of reporting anonymized usage metrics to PowerSync telemetry service
     disable_telemetry_sharing: false

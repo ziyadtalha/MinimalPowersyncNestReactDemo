@@ -97,8 +97,6 @@ signOptions: { expiresIn: '1d', audience: 'powersync' }
 
 - JWT payload must include `sub: <user.id>`; the project sets this in `AuthService` when signing tokens.
 
-- Optional `GET /powersync/auth` endpoint exists (JWT-protected). In our current setup PowerSync validates tokens directly via the symmetric key, but the auth endpoint can be used for additional session variables or custom logic.
-
 ## Frontend (React) highlights
 
 - Initialize PowerSync only after a user is authenticated. Recreate the PowerSync client whenever the auth token changes so each user gets a fresh, per-user connection (and old user's data is cleared).

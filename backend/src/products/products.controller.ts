@@ -22,41 +22,41 @@ export class ProductsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create product' })
   async create(
-    @CurrentUser() user: { id: string },
+    @CurrentUser() user: { id: string; role?: string },
     @Body() dto: CreateProductDto,
   ) {
-    return this.productsService.create(user.id, dto);
+    return this.productsService.create(user, dto);
   }
 
   @Get()
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get user's products" })
-  async findAll(@CurrentUser() user: { id: string }) {
-    return this.productsService.findAll(user.id);
+  async findAll(@CurrentUser() user: { id: string; role?: string }) {
+    return this.productsService.findAll(user);
   }
 
   @Get(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get product by id (must be owner)' })
-  async findOne(@CurrentUser() user: { id: string }, @Param('id') id: string) {
-    return this.productsService.findOne(user.id, id);
+  async findOne(@CurrentUser() user: { id: string; role?: string }, @Param('id') id: string) {
+    return this.productsService.findOne(user, id);
   }
 
   @Patch(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update product (owner only)' })
   async update(
-    @CurrentUser() user: { id: string },
+    @CurrentUser() user: { id: string; role?: string },
     @Param('id') id: string,
     @Body() dto: UpdateProductDto,
   ) {
-    return this.productsService.update(user.id, id, dto);
+    return this.productsService.update(user, id, dto);
   }
 
   @Delete(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete product (owner only)' })
-  async remove(@CurrentUser() user: { id: string }, @Param('id') id: string) {
-    return this.productsService.remove(user.id, id);
+  async remove(@CurrentUser() user: { id: string; role?: string }, @Param('id') id: string) {
+    return this.productsService.remove(user, id);
   }
 }

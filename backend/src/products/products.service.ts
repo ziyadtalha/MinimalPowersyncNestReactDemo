@@ -7,33 +7,35 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export class ProductsService {
   constructor(private prisma: PrismaService) { }
 
-  async create(userId: string, dto: CreateProductDto) {
+  async create(user: { id: string }, dto: CreateProductDto) {
     const product = await this.prisma.product.create({
       data: {
         name: dto.name,
         price: dto.price,
         description: dto.description,
-        ownerId: userId,
+        ownerId: user.id,
       },
     });
     return product;
   }
 
-  async findAll(userId: string) {
-    return this.prisma.product.findMany({ where: { ownerId: userId } });
+  async findAll(user: { id: string; role?: string }) {
+    if (user.role === 'ADMIN') {
+      return this.prisma.product.findMany();
+    }
+    return this.prisma.product.findMany({ where: { ownerId: user.id } });
   }
 
-  async findOne(userId: string, id: string) {
-    const product = await this.prisma.product.findFirst({
-      where: { id, ownerId: userId },
-    });
+  async findOne(user: { id: string; role?: string }, id: string) {
+    const where = user.role === 'ADMIN' ? { id } : { id, ownerId: user.id };
+    const product = await this.prisma.product.findFirst({ where });
     if (!product) throw new NotFoundException('Product not found');
     return product;
   }
 
-  async update(userId: string, id: string, dto: UpdateProductDto) {
+  async update(user: { id: string }, id: string, dto: UpdateProductDto) {
     const result = await this.prisma.product.updateMany({
-      where: { id, ownerId: userId },
+      where: { id, ownerId: user.id },
       data: dto as any,
     });
     if (result.count === 0)
@@ -41,9 +43,9 @@ export class ProductsService {
     return this.prisma.product.findUnique({ where: { id } });
   }
 
-  async remove(userId: string, id: string) {
+  async remove(user: { id: string }, id: string) {
     const result = await this.prisma.product.deleteMany({
-      where: { id, ownerId: userId },
+      where: { id, ownerId: user.id },
     });
     if (result.count === 0)
       throw new NotFoundException('Product not found or not owner');

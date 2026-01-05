@@ -52,6 +52,41 @@ replication:
       sslmode: disable
 ```
 
+### Linux host networking notes
+
+On some Linux systems `host.docker.internal` may not be available by default. If containers cannot reach the host's Postgres instance, add one of the following fixes to your Compose configuration or use the host network mode.
+
+- Add a host gateway mapping (recommended):
+
+```yaml
+services:
+  powersync:
+    # ...
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+```
+
+This requires Docker Engine that supports the `host-gateway` feature (Docker 20.10.0+).
+
+- Or (Linux-only) run the PowerSync container on the host network:
+
+```yaml
+services:
+  powersync:
+    # ...
+    network_mode: "host"
+```
+
+Note: `network_mode: "host"` bypasses network isolation and port mappings — use only for local development.
+
+You can verify connectivity from the running container:
+
+```bash
+docker compose exec powersync ping -c 1 host.docker.internal
+# or test TCP connection with nc (if installed):
+docker compose exec powersync sh -c "nc -zv host.docker.internal 5432"
+```
+
 - JWT validation (symmetric HS256) must match your backend `JWT_SECRET`. In `config.yaml` we use the base64url-encoded form of the secret:
 
 ```yaml

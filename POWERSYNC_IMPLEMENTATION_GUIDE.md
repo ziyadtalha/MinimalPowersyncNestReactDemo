@@ -53,6 +53,38 @@ Server-driven auth is useful for dynamic feature gates, admin overrides, or retu
 
 ## Notes and next steps
 - Use `host.docker.internal` when PowerSync runs inside Docker and the DB runs on the host.
+  
+Linux note: on many Linux hosts `host.docker.internal` is not present by default. If your PowerSync container cannot reach Postgres on the host, add one of these local fixes to your `docker-compose.yml`:
+
+- Add a host gateway mapping (preferred):
+
+```yaml
+services:
+  powersync:
+    # ...
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+```
+
+This requires Docker Engine supporting the `host-gateway` feature (Docker 20.10.0+).
+
+- Or use the host network (Linux-only):
+
+```yaml
+services:
+  powersync:
+    # ...
+    network_mode: "host"
+```
+
+Using `network_mode: "host"` lets the container access `localhost:5432` directly but disables network isolation — use only for development.
+
+Quick verification from the running container:
+
+```bash
+docker compose exec powersync ping -c 1 host.docker.internal
+docker compose exec powersync sh -c "nc -zv host.docker.internal 5432"
+```
 - If you'd like, I can add the `sync_rules` snippet directly into `powersync/config/config.example.yaml` and add a short runbook for testing without RLS.
 
 ---

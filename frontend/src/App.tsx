@@ -73,6 +73,8 @@ function AppContent() {
         },
       });
 
+      console.log('Creating PowerSync database instance...', db);
+
       console.log('Initializing PowerSync for authenticated user...');
       await db.init();
       await db.connect(connector);

@@ -14,6 +14,7 @@ type Product = {
 
 // Component that only renders when PowerSync is available
 const ProductsList = () => {
+    const { user } = useAuth();
     const status = useStatus();
     const { data: products, isLoading, error } = useQuery<Product>(
         'SELECT * FROM Product',
@@ -71,6 +72,15 @@ const ProductsList = () => {
         }
     };
 
+    React.useEffect(() => {
+        // Log the tables/data received from PowerSync
+        console.log('PowerSync status:', status);
+    }, [status]);
+
+    React.useEffect(() => {
+        console.log('PowerSync products table update:', products);
+    }, [products]);
+
     return (
         <>
             <div style={{ marginBottom: '20px', fontSize: '14px', color: '#666' }}>
@@ -89,23 +99,61 @@ const ProductsList = () => {
                     <button type="submit" disabled={creating}>{creating ? 'Creating…' : 'Create'}</button>
                 </form>
 
-                <h2>Your Products</h2>
                 {isLoading && <p>Loading products…</p>}
                 {error && <p style={{ color: 'red' }}>Error: {error.message}</p>}
-                {!isLoading && !error && products.length === 0 && <p>No products found.</p>}
-                {!isLoading && !error && products.length > 0 && (
-                    <ul>
-                        {products.map((p) => (
-                            <li key={p.id} style={{ marginBottom: 10 }}>
-                                <strong>{p.name}</strong> — ${p.price.toFixed(2)}
-                                <div style={{ fontSize: 12, color: '#666' }}>{p.description}</div>
-                                <div style={{ marginTop: 6 }}>
-                                    <button onClick={() => updateProduct(p)} style={{ marginRight: 8 }}>Edit</button>
-                                    <button onClick={() => deleteProduct(p)} style={{ background: '#dc3545', color: 'white' }}>Delete</button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+                {!isLoading && !error && (!products || products.length === 0) && <p>No products found.</p>}
+
+                {!isLoading && !error && products && (
+                    <>
+                        {user?.role === 'ADMIN' ? (
+                            <>
+                                <h2>My Products (Admin)</h2>
+                                <ul>
+                                    {products
+                                        .filter(p => p.ownerId === user.id)
+                                        .map(p => (
+                                            <li key={p.id} style={{ marginBottom: 10 }}>
+                                                <strong>{p.name}</strong> — ${p.price.toFixed(2)}
+                                                <div style={{ fontSize: 12, color: '#666' }}>{p.description}</div>
+                                                <div style={{ marginTop: 6 }}>
+                                                    <button onClick={() => updateProduct(p)} style={{ marginRight: 8 }}>Edit</button>
+                                                    <button onClick={() => deleteProduct(p)} style={{ background: '#dc3545', color: 'white' }}>Delete</button>
+                                                </div>
+                                            </li>
+                                        ))}
+                                </ul>
+
+                                <h2>Other Users' Products</h2>
+                                <ul>
+                                    {products
+                                        .filter(p => p.ownerId !== user.id)
+                                        .map(p => (
+                                            <li key={p.id} style={{ marginBottom: 10 }}>
+                                                <strong>{p.name}</strong> — ${p.price.toFixed(2)}
+                                                <div style={{ fontSize: 12, color: '#666' }}>{p.description}</div>
+                                                <div style={{ fontSize: 12, color: '#444' }}>Owner: {p.ownerId}</div>
+                                            </li>
+                                        ))}
+                                </ul>
+                            </>
+                        ) : (
+                            <>
+                                <h2>Your Products</h2>
+                                <ul>
+                                    {products.map((p) => (
+                                        <li key={p.id} style={{ marginBottom: 10 }}>
+                                            <strong>{p.name}</strong> — ${p.price.toFixed(2)}
+                                            <div style={{ fontSize: 12, color: '#666' }}>{p.description}</div>
+                                            <div style={{ marginTop: 6 }}>
+                                                <button onClick={() => updateProduct(p)} style={{ marginRight: 8 }}>Edit</button>
+                                                <button onClick={() => deleteProduct(p)} style={{ background: '#dc3545', color: 'white' }}>Delete</button>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
+                    </>
                 )}
             </section>
         </>

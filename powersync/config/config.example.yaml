@@ -14,15 +14,44 @@ storage:
 # The port which the PowerSync API server will listen on
 port: 8080
 
-# Specify sync rules
 sync_rules:
   content: |
     bucket_definitions:
+
+      # ─────────────────────────────────────
+      # Normal users → only their products
+      # ─────────────────────────────────────
       user_products:
-        # Only create bucket for the authenticated user
-        parameters: SELECT token_parameters.user_id
+        parameters: |
+          SELECT id AS user_id
+          FROM "User"
+          WHERE
+            id = token_parameters.user_id
+            AND role = 'USER'
+
         data:
-          - SELECT * FROM "Product" WHERE "ownerId" = bucket.user_id
+          - |
+            SELECT *
+            FROM "Product"
+            WHERE "ownerId" = bucket.user_id
+
+
+      # ─────────────────────────────────────
+      # Admins → all products
+      # ─────────────────────────────────────
+      admin_products:
+        parameters: |
+          SELECT 1 AS is_admin
+          FROM "User"
+          WHERE
+            id = token_parameters.user_id
+            AND role = 'ADMIN'
+
+        data:
+          - |
+            SELECT *
+            FROM "Product"
+            WHERE bucket.is_admin = 1
 
 # Settings for client authentication
 client_auth:

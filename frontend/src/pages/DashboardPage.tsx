@@ -15,6 +15,7 @@ type Product = {
 // Component that only renders when PowerSync is available
 const ProductsList = () => {
     const { user } = useAuth();
+    const powerSync = usePowerSync();
     const status = useStatus();
     const { data: products, isLoading, error } = useQuery<Product>(
         'SELECT * FROM Product',
@@ -31,16 +32,53 @@ const ProductsList = () => {
         if (!name || price === '') return;
         setCreating(true);
         try {
-            await client.post('/products', {
-                name,
-                price: Number(price),
-                description: description || null,
-            });
-            setName(''); setPrice(''); setDescription('');
-        } catch (err) {
+            // Force local insert by throwing error before API call
+            throw new Error('FORCE_LOCAL_INSERT');
+            
+            // Uncomment to use backend API instead of local insert
+            // await client.post('/products', {
+            //     name,
+            //     price: Number(price),
+            //     description: description || null,
+            // });
+            // setName(''); setPrice(''); setDescription('');
+        } catch (err: unknown) {
             console.error(err);
+
+            // Check if this is our forced local insert
+            if (err instanceof Error && err.message === 'FORCE_LOCAL_INSERT') {
+                if (!powerSync) {
+                    alert('PowerSync not available for local insert');
+                    setCreating(false);
+                    return;
+                }
+
+                console.log('Attempting local insert via PowerSync...', user);
+
+                try {
+                    const res = await powerSync.execute(
+                        /* sql */ `
+                        INSERT INTO Product (id, name, price, description, ownerId, createdAt)
+                        VALUES (uuid(), ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+                    `,
+                        [name, Number(price), description || null, user?.id]
+                    );
+
+                    console.log('Local insert result:', res);
+                    // Clear form after successful local insert
+                    setName('');
+                    setPrice('');
+                    setDescription('');
+                } catch (e2) {
+                    console.error('Local insert failed', e2);
+                    alert('Local insert failed');
+                }
+                setCreating(false);
+                return;
+            }
+
+            // For other errors, show alert
             alert('Error creating product');
-        } finally {
             setCreating(false);
         }
     };
@@ -51,13 +89,46 @@ const ProductsList = () => {
         const newPrice = newPriceRaw ? Number(newPriceRaw) : p.price;
         const newDescription = window.prompt('New description', p.description ?? '') ?? p.description;
         try {
-            await client.patch(`/products/${p.id}`, {
-                name: newName,
-                price: newPrice,
-                description: newDescription,
-            });
-        } catch (err) {
+            // Force local update by throwing error before API call
+            throw new Error('FORCE_LOCAL_UPDATE');
+            
+            // Uncomment to use backend API instead of local update
+            // await client.patch(`/products/${p.id}`, {
+            //     name: newName,
+            //     price: newPrice,
+            //     description: newDescription,
+            // });
+        } catch (err: unknown) {
             console.error(err);
+
+            // Check if this is our forced local update
+            if (err instanceof Error && err.message === 'FORCE_LOCAL_UPDATE') {
+                if (!powerSync) {
+                    alert('PowerSync not available for local update');
+                    return;
+                }
+
+                console.log('Attempting local update via PowerSync...', p.id);
+
+                try {
+                    const res = await powerSync.execute(
+                        /* sql */ `
+                        UPDATE Product
+                        SET name = ?, price = ?, description = ?
+                        WHERE id = ?
+                    `,
+                        [newName, newPrice, newDescription, p.id]
+                    );
+
+                    console.log('Local update result:', res);
+                } catch (e2) {
+                    console.error('Local update failed', e2);
+                    alert('Local update failed');
+                }
+                return;
+            }
+
+            // For other errors, show alert
             alert('Error updating product');
         }
     };
@@ -65,9 +136,41 @@ const ProductsList = () => {
     const deleteProduct = async (p: Product) => {
         if (!window.confirm(`Delete product "${p.name}"?`)) return;
         try {
-            await client.delete(`/products/${p.id}`);
-        } catch (err) {
+            // Force local delete by throwing error before API call
+            throw new Error('FORCE_LOCAL_DELETE');
+            
+            // Uncomment to use backend API instead of local delete
+            // await client.delete(`/products/${p.id}`);
+        } catch (err: unknown) {
             console.error(err);
+
+            // Check if this is our forced local delete
+            if (err instanceof Error && err.message === 'FORCE_LOCAL_DELETE') {
+                if (!powerSync) {
+                    alert('PowerSync not available for local delete');
+                    return;
+                }
+
+                console.log('Attempting local delete via PowerSync...', p.id);
+
+                try {
+                    const res = await powerSync.execute(
+                        /* sql */ `
+                        DELETE FROM Product
+                        WHERE id = ?
+                    `,
+                        [p.id]
+                    );
+
+                    console.log('Local delete result:', res);
+                } catch (e2) {
+                    console.error('Local delete failed', e2);
+                    alert('Local delete failed');
+                }
+                return;
+            }
+
+            // For other errors, show alert
             alert('Error deleting product');
         }
     };

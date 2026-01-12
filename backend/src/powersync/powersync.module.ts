@@ -1,3 +1,11 @@
-// PowerSync module removed - PowerSync uses JWKS for local JWT validation
-// and sync_rules in config.yaml handle data filtering per user.
-// No backend auth endpoint needed.
+import { Module } from '@nestjs/common';
+import { PowerSyncController } from './powersync.controller';
+import { PowerSyncService } from './powersync.service';
+import { PrismaModule } from '../prisma/prisma.module';
+
+@Module({
+  imports: [PrismaModule],
+  controllers: [PowerSyncController],
+  providers: [PowerSyncService],
+})
+export class PowerSyncModule {}

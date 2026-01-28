@@ -2,6 +2,12 @@
   "name": "frontend",
   "private": true,
   "version": "0.0.0",
+  "description": "Minimal PowerSync Nest + React Electron demo app",
+  "homepage": "https://example.com/your_app",
+  "author": {
+    "name": "User",
+    "email": "user@example.com"
+  },
   "type": "module",
   "scripts": {
     "preview": "vite preview",
@@ -56,7 +62,8 @@
         "tar.gz"
       ],
       "category": "Utility",
-      "icon": "build/icons"
+      "icon": "build/icons",
+      "maintainer": "User <user@example.com>"
     }
   },
   "dependencies": {

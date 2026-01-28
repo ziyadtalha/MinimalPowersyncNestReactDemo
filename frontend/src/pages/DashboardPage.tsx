@@ -1,6 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import { usePowerSync, useQuery, useStatus } from '@powersync/react';
-import client from '../api/client';
+//import client from '../api/client';
 import React from 'react';
 
 type Product = {
@@ -17,7 +17,7 @@ const ProductsList = () => {
     const { user } = useAuth();
     const powerSync = usePowerSync();
     const status = useStatus();
-    const { data: products, isLoading, error } = useQuery<Product>(
+    const { data: products, isLoading, error } = useQuery(
         'SELECT * FROM Product',
         []
     );

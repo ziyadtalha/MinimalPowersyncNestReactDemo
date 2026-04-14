@@ -7,7 +7,7 @@ import DashboardPage from './pages/DashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
-import { PowerSyncDatabase, Schema, Table, Column, ColumnType } from '@powersync/web';
+import { PowerSyncDatabase, Schema, Table, Column, ColumnType, type PowerSyncBackendConnector } from '@powersync/web';
 import { PowerSyncContext } from "@powersync/react";
 
 // Define PowerSync schema
@@ -28,7 +28,7 @@ const schema = new Schema([
 // Inner component that has access to auth context
 function AppContent() {
   const { isAuthenticated, token, isLoading } = useAuth();
-  const [powerSync, setPowerSync] = React.useState<InstanceType<typeof PowerSyncDatabase> | null>(null);
+  const [powerSync] = React.useState<InstanceType<typeof PowerSyncDatabase>>(new PowerSyncDatabase({ schema, database: { dbFilename: 'powersync.db' } }));
 
   React.useEffect(() => {
     // Don't initialize if still loading auth state
@@ -36,11 +36,8 @@ function AppContent() {
 
     // If not authenticated, disconnect and cleanup
     if (!isAuthenticated || !token) {
-      if (powerSync) {
-        console.log('User logged out, disconnecting PowerSync...');
-        powerSync.disconnectAndClear().catch(console.error);
-        setPowerSync(null);
-      }
+      console.log('User logged out, disconnecting PowerSync...');
+      powerSync.disconnectAndClear().catch(console.error);
       return;
     }
 
@@ -50,7 +47,7 @@ function AppContent() {
       const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
       // Create the backend connector
-      const connector = {
+      const connector: PowerSyncBackendConnector  = {
         fetchCredentials: async () => {
           // Always use the latest token from the closure
           const currentToken = token;
@@ -113,41 +110,19 @@ function AppContent() {
         },
       };
 
-      const db = new PowerSyncDatabase({
-        schema,
-        database: {
-          dbFilename: 'powersync.db',
-        },
-      });
-
-      console.log('Creating PowerSync database instance...', db);
-
       console.log('Initializing PowerSync for authenticated user...');
-      await db.init();
-      await db.connect(connector);
-      console.log('PowerSync connected successfully');
-      
-      setPowerSync(db);
+      await powerSync.init();
+      await powerSync.connect(connector);
     };
 
-    // If token changed and we already have a PowerSync instance, reconnect
-    if (powerSync) {
-      console.log('Token changed, reconnecting PowerSync...');
-      powerSync.disconnectAndClear()
-        .then(() => initPowerSync())
-        .catch(console.error);
-    } else {
-      // First time initialization
-      initPowerSync().catch(console.error);
-    }
+    // First time initialization
+    initPowerSync().catch(console.error);
 
     // Cleanup on unmount
     return () => {
-      if (powerSync) {
-        powerSync.disconnectAndClear().catch(console.error);
-      }
+      powerSync.disconnectAndClear().catch(console.error);
     };
-  }, [isAuthenticated, token, isLoading]);
+  }, [isAuthenticated, token, isLoading, powerSync]);
 
   return (
     <PowerSyncContext.Provider value={powerSync}>
